@@ -59,8 +59,7 @@ void drawScreen() {
         if(ch >= 'a' && ch <= 'z'){
           ch = ch - 32;
         }
- 
-        // отдельные случаи
+
         if(ch == ',') ch = '<';   // Б
         if(ch == '[') ch = '{';   // Х
  
