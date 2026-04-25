@@ -176,7 +176,7 @@ void sendMessage(String text){
   Serial.println(text);
  
   for(int i = 0; i < text.length(); i++){
-    btle.advertise(text[i], i);  // символ + его позиция
+    btle.advertise(text[i], i);
     btle.hopChannel();
     delay(50);
   }
