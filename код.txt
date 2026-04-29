@@ -6,63 +6,63 @@
 #include <SPI.h>
 #include <OLED_I2C.h>
 #include <Keypad.h>
- 
+
 RF24 radio(9,10);
 BTLE btle(&radio);
- 
+
 OLED myOLED(A4, A5, A4);
- 
+
 extern uint8_t RusFont[];
- 
+
 const byte ROWS = 4;
 const byte COLS = 4;
- 
+
 char keys[ROWS][COLS] = {
   {'1','2','3','4'},
   {'5','6','7','8'},
   {'9','A','B','C'},
   {'D','E','F','G'}
 };
- 
+
 byte rowPins[ROWS] = {6,7,8,A0};
 byte colPins[COLS] = {2,3,4,5};
- 
+
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
- 
+
 char letters[3][11] = {
   {'f',',','d','u','l','t','p','r','k','v','y'},
   {'j','g','h','c','n','e','a','[','w','x','i'},
-  {'o','q','s','z'}
+  {'o','q','s','z','b',';'}
 };
- 
+
 int cursorX = 0;
 int cursorY = 0;
- 
+
 String inputText = "";
 unsigned long lastReceiveTime = 0;
- 
+
 void drawScreen() {
- 
+
   myOLED.clrScr();
   myOLED.setFont(RusFont);
   myOLED.print(inputText, CENTER, 0);
   for(int y=0; y<3; y++){
     for(int x=0; x<11; x++){
- 
+
       int posX = 4 + x*11;
       int posY = 16 + y*14;
- 
+
       char ch = letters[y][x];
- 
+
       if(cursorX==x && cursorY==y){
- 
+
         if(ch >= 'a' && ch <= 'z'){
           ch = ch - 32;
         }
 
         if(ch == ',') ch = '<';   // Б
         if(ch == '[') ch = '{';   // Х
- 
+
         myOLED.print(String(ch), posX, posY);
       }
       else{
@@ -71,7 +71,7 @@ void drawScreen() {
     }
   }
   int yPos = 54;
- 
+
   // SPACE
   if(cursorY==3 && cursorX==0){
     myOLED.print("GHJ<TK", 5, yPos);
@@ -79,7 +79,7 @@ void drawScreen() {
   } else {
     myOLED.print("ghj,tk", 5, yPos);
   }
- 
+
   // OK
   if(cursorY==3 && cursorX==1){
     myOLED.print("JR", 55, yPos);
@@ -87,7 +87,7 @@ void drawScreen() {
   } else {
     myOLED.print("jr", 55, yPos);
   }
- 
+
   // BACK
   if(cursorY==3 && cursorX==2){
     myOLED.print("YFPFL", 95, yPos);
@@ -95,7 +95,7 @@ void drawScreen() {
   } else {
     myOLED.print("yfpfl", 95, yPos);
   }
- 
+
   myOLED.update();
 }
 void showResult(){
@@ -104,7 +104,7 @@ void showResult(){
   myOLED.print(inputText, CENTER, 28);
   myOLED.update();
   delay(1000);
- 
+
   inputText="";
   cursorX=0;
   cursorY=0;
@@ -116,14 +116,14 @@ void setup(){
   drawScreen();
 }
 void loop(){
- 
+
   char key = keypad.getKey();
   if(!key) return;
- 
+
   // ВВЕРХ
   if(key=='2' && cursorY>0)
     cursorY--;
- 
+
   // ВНИЗ
   if(key=='A'){
     if(cursorY<2)
@@ -133,11 +133,11 @@ void loop(){
       cursorX=0;
     }
   }
- 
+
   // ВЛЕВО
   if(key=='5' && cursorX>0)
     cursorX--;
- 
+
   // ВПРАВО
   if(key=='7'){
     if(cursorY<3 && cursorX<10)
@@ -145,10 +145,10 @@ void loop(){
     if(cursorY==3 && cursorX<2)
       cursorX++;
   }
- 
+
   // ВЫБОР (6)
   if(key=='6'){
- 
+
     if(cursorY<3){
       if(inputText.length()<13){
         char ch = letters[cursorY][cursorX];
@@ -158,11 +158,11 @@ void loop(){
     else{
       if(cursorX==0 && inputText.length()<13)
         inputText += " ";
- 
+
       if(cursorX==1)
         showResult();
         sendMessage(inputText);
- 
+
       if(cursorX==2 && inputText.length()>0)
         inputText.remove(inputText.length()-1);
     }
@@ -170,11 +170,11 @@ void loop(){
   checkIncoming();
   drawScreen();
 }
- 
+
 void sendMessage(String text){
   Serial.print("Send: ");
   Serial.println(text);
- 
+
   for(int i = 0; i < text.length(); i++){
     btle.advertise(text[i], i);
     btle.hopChannel();
@@ -185,21 +185,21 @@ void checkIncoming(){
   if(btle.available()){
     char ch = btle.read();
     int pos = btle.read();
- 
+
     if(pos == 0){
       receivedText = "";
     }
- 
+
     receivedText += ch;
     lastReceiveTime = millis();
   }
- 
+
   if(receivedText.length() > 0 && millis() - lastReceiveTime > 200){
     showReceived(receivedText);
     receivedText = "";
   }
 }
- 
+
 void showReceived(String text){
   display.clearDisplay();
   display.setCursor(0,0);
